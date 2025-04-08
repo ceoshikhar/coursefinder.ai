@@ -4,7 +4,9 @@ import {
     PropsWithChildren,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 
@@ -24,7 +26,6 @@ interface CartContextType {
     addToCart: (item: CartItem) => void;
     setCartItemCount: (productID: number, count: number) => void;
     isAddedToCart: (product: Product) => boolean;
-    // getByProductID: (productID: number) => CartItem | undefined;
 }
 
 const CartContext = createContext<CartContextType>({
@@ -33,11 +34,21 @@ const CartContext = createContext<CartContextType>({
     addToCart: () => {},
     setCartItemCount: () => {},
     isAddedToCart: () => false,
-    // getByProductID: () => undefined,
 });
 
+const initCartState = () => {
+    const cartStr = localStorage.getItem("cart");
+
+    if (!cartStr) {
+        return [];
+    }
+
+    const initState: CartItem[] = JSON.parse(cartStr);
+    return initState;
+};
+
 export const CartProvider: FC<PropsWithChildren> = ({ children }) => {
-    const [items, setItems] = useState<CartItem[]>([]);
+    const [items, setItems] = useState<CartItem[]>(() => initCartState());
 
     const isAddedToCart = useCallback(
         (product: Product) => {
@@ -88,21 +99,9 @@ export const CartProvider: FC<PropsWithChildren> = ({ children }) => {
         [items]
     );
 
-    // const getByProductID = useCallback(
-    //     (productID: number) => {
-    //         let item: CartItem | undefined = undefined;
-
-    //         for (let i = 0; i < items.length; i++) {
-    //             if (items[i].product.id === productID) {
-    //                 item = items[i];
-    //                 break;
-    //             }
-    //         }
-
-    //         return item;
-    //     },
-    //     [items]
-    // );
+    useEffect(() => {
+        localStorage.setItem("cart", JSON.stringify(items));
+    }, [items]);
 
     const value = useMemo(() => {
         return {
@@ -110,7 +109,6 @@ export const CartProvider: FC<PropsWithChildren> = ({ children }) => {
             addToCart,
             setCartItemCount,
             isAddedToCart,
-            // getByProductID,
         };
     }, [addToCart, isAddedToCart, items, setCartItemCount]);
 
